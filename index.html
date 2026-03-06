@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Aventura para Cami ❤️</title>
+
+<style>
+
+body{
+margin:0;
+overflow:hidden;
+background:#87CEEB;
+font-family:Arial;
+}
+
+canvas{
+display:block;
+margin:auto;
+background:#87CEEB;
+}
+
+#mensaje{
+position:absolute;
+top:40%;
+width:100%;
+text-align:center;
+font-size:30px;
+color:white;
+display:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="mensaje"></div>
+<canvas id="game"></canvas>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = 900;
+canvas.height = 400;
+
+let gravity = 0.5;
+
+let player = {
+x:50,
+y:300,
+width:30,
+height:40,
+dx:0,
+dy:0,
+speed:4,
+jump:10,
+grounded:false
+};
+
+let boss = {
+x:750,
+y:280,
+width:50,
+height:60,
+dx:2,
+dy:0,
+hp:5
+};
+
+let platforms = [
+{x:0,y:360,width:900,height:40},
+{x:200,y:300,width:120,height:20},
+{x:400,y:250,width:120,height:20},
+{x:600,y:300,width:120,height:20}
+];
+
+let bullets = [];
+
+let bossBullets = [];
+
+let keys = {};
+
+document.addEventListener("keydown", e=>{
+keys[e.key]=true;
+});
+
+document.addEventListener("keyup", e=>{
+keys[e.key]=false;
+});
+
+function shootBoss(){
+
+bossBullets.push({
+x:boss.x,
+y:boss.y+20,
+width:10,
+height:10,
+dx:-5
+});
+
+}
+
+setInterval(shootBoss,3000);
+
+setInterval(()=>{
+boss.dy = -10;
+},4000);
+
+function update(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+player.dx = 0;
+
+if(keys["ArrowRight"]) player.dx = player.speed;
+if(keys["ArrowLeft"]) player.dx = -player.speed;
+
+if(keys[" "] && player.grounded){
+player.dy = -player.jump;
+player.grounded=false;
+}
+
+player.dy += gravity;
+
+player.x += player.dx;
+player.y += player.dy;
+
+player.grounded = false;
+
+platforms.forEach(p=>{
+
+ctx.fillStyle="#654321";
+ctx.fillRect(p.x,p.y,p.width,p.height);
+
+if(
+player.x < p.x+p.width &&
+player.x+player.width > p.x &&
+player.y+player.height < p.y+10 &&
+player.y+player.height+player.dy >= p.y
+){
+player.y = p.y-player.height;
+player.dy = 0;
+player.grounded = true;
+}
+
+});
+
+ctx.fillStyle="red";
+ctx.fillRect(player.x,player.y,player.width,player.height);
+
+boss.dy += gravity;
+boss.x += boss.dx;
+boss.y += boss.dy;
+
+if(boss.x < 650 || boss.x > 850){
+boss.dx *= -1;
+}
+
+if(boss.y > 300){
+boss.y = 300;
+boss.dy = 0;
+}
+
+ctx.fillStyle="purple";
+ctx.fillRect(boss.x,boss.y,boss.width,boss.height);
+
+bossBullets.forEach((b,i)=>{
+
+b.x += b.dx;
+
+ctx.fillStyle="black";
+ctx.fillRect(b.x,b.y,b.width,b.height);
+
+if(
+b.x < player.x + player.width &&
+b.x + b.width > player.x &&
+b.y < player.y + player.height &&
+b.y + b.height > player.y
+){
+player.x = 50;
+player.y = 300;
+}
+
+});
+
+if(
+player.x < boss.x + boss.width &&
+player.x + player.width > boss.x &&
+player.y + player.height < boss.y + 20
+){
+boss.hp--;
+player.dy = -8;
+}
+
+if(boss.hp <=0){
+
+document.getElementById("mensaje").style.display="block";
+
+document.getElementById("mensaje").innerHTML=
+"Cami, Felicidades por ganar ❤️<br><br>Espero que te haya gustado este mini juego.<br><br>Quiero decirte que te amo mucho,<br>te amo con todo mi corazón.<br><br>Quiero que seas mi única mujercita,<br>tan guapona 💕";
+
+}
+
+requestAnimationFrame(update);
+
+}
+
+update();
+
+</script>
+
+</body>
+</html>
