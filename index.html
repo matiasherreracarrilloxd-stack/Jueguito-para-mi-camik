@@ -1,213 +1,199 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Aventura para Cami ❤️</title>
-
+<title>Juego para Cami</title>
 <style>
-
 body{
 margin:0;
 overflow:hidden;
-background:#87CEEB;
-font-family:Arial;
+background:#7ec0ee;
 }
 
 canvas{
 display:block;
 margin:auto;
-background:#87CEEB;
+background:#7ec0ee;
 }
-
-#mensaje{
-position:absolute;
-top:40%;
-width:100%;
-text-align:center;
-font-size:30px;
-color:white;
-display:none;
-}
-
 </style>
 </head>
 
 <body>
 
-<div id="mensaje"></div>
-<canvas id="game"></canvas>
+<canvas id="game" width="1200" height="500"></canvas>
 
 <script>
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas = document.getElementById("game")
+const ctx = canvas.getContext("2d")
 
-canvas.width = 900;
-canvas.height = 400;
-
-let gravity = 0.5;
+let gravity = 0.6
 
 let player = {
 x:50,
-y:300,
-width:30,
-height:40,
+y:350,
+width:40,
+height:50,
 dx:0,
 dy:0,
 speed:4,
-jump:10,
-grounded:false
-};
-
-let boss = {
-x:750,
-y:280,
-width:50,
-height:60,
-dx:2,
-dy:0,
-hp:5
-};
-
-let platforms = [
-{x:0,y:360,width:900,height:40},
-{x:200,y:300,width:120,height:20},
-{x:400,y:250,width:120,height:20},
-{x:600,y:300,width:120,height:20}
-];
-
-let bullets = [];
-
-let bossBullets = [];
-
-let keys = {};
-
-document.addEventListener("keydown", e=>{
-keys[e.key]=true;
-});
-
-document.addEventListener("keyup", e=>{
-keys[e.key]=false;
-});
-
-function shootBoss(){
-
-bossBullets.push({
-x:boss.x,
-y:boss.y+20,
-width:10,
-height:10,
-dx:-5
-});
-
+jump:-12
 }
 
-setInterval(shootBoss,3000);
+let boss = {
+x:1000,
+y:330,
+width:50,
+height:60,
+direction:1,
+hp:3,
+jumpTimer:0,
+shootTimer:0,
+dy:0
+}
 
-setInterval(()=>{
-boss.dy = -10;
-},4000);
+let bullets = []
+
+let platforms = [
+{x:0,y:400,width:1200,height:100},
+{x:200,y:300,width:150,height:20},
+{x:450,y:250,width:150,height:20},
+{x:700,y:300,width:150,height:20}
+]
+
+let keys = {}
+
+document.addEventListener("keydown",e=>keys[e.key]=true)
+document.addEventListener("keyup",e=>keys[e.key]=false)
+
+function shoot(x,y){
+bullets.push({x:x,y:y,width:10,height:10})
+}
 
 function update(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+if(keys["ArrowRight"]) player.dx = player.speed
+else if(keys["ArrowLeft"]) player.dx = -player.speed
+else player.dx = 0
 
-player.dx = 0;
-
-if(keys["ArrowRight"]) player.dx = player.speed;
-if(keys["ArrowLeft"]) player.dx = -player.speed;
-
-if(keys[" "] && player.grounded){
-player.dy = -player.jump;
-player.grounded=false;
+if(keys[" "] && player.dy==0){
+player.dy = player.jump
 }
 
-player.dy += gravity;
-
-player.x += player.dx;
-player.y += player.dy;
-
-player.grounded = false;
+player.dy += gravity
+player.x += player.dx
+player.y += player.dy
 
 platforms.forEach(p=>{
-
-ctx.fillStyle="#654321";
-ctx.fillRect(p.x,p.y,p.width,p.height);
-
-if(
-player.x < p.x+p.width &&
+if(player.x < p.x+p.width &&
 player.x+player.width > p.x &&
-player.y+player.height < p.y+10 &&
-player.y+player.height+player.dy >= p.y
-){
-player.y = p.y-player.height;
-player.dy = 0;
-player.grounded = true;
+player.y+player.height < p.y+20 &&
+player.y+player.height > p.y){
+
+player.y = p.y-player.height
+player.dy = 0
+}
+})
+
+boss.x += boss.direction*2
+if(boss.x > 1100 || boss.x < 850) boss.direction *= -1
+
+boss.jumpTimer++
+boss.shootTimer++
+
+if(boss.jumpTimer > 120){
+boss.dy = -10
+boss.jumpTimer = 0
+
+shoot(boss.x,boss.y) // dispara al saltar
 }
 
-});
+boss.dy += gravity
+boss.y += boss.dy
 
-ctx.fillStyle="red";
-ctx.fillRect(player.x,player.y,player.width,player.height);
-
-boss.dy += gravity;
-boss.x += boss.dx;
-boss.y += boss.dy;
-
-if(boss.x < 650 || boss.x > 850){
-boss.dx *= -1;
+if(boss.y > 330){
+boss.y = 330
+boss.dy = 0
 }
 
-if(boss.y > 300){
-boss.y = 300;
-boss.dy = 0;
+if(boss.shootTimer > 120){ // 2 segundos
+shoot(boss.x,boss.y)
+boss.shootTimer = 0
 }
 
-ctx.fillStyle="purple";
-ctx.fillRect(boss.x,boss.y,boss.width,boss.height);
+bullets.forEach(b=>{
+b.x -= 4
+})
 
-bossBullets.forEach((b,i)=>{
+bullets = bullets.filter(b=>b.x > 0)
 
-b.x += b.dx;
-
-ctx.fillStyle="black";
-ctx.fillRect(b.x,b.y,b.width,b.height);
-
+bullets.forEach(b=>{
 if(
-b.x < player.x + player.width &&
-b.x + b.width > player.x &&
-b.y < player.y + player.height &&
-b.y + b.height > player.y
+player.x < b.x+b.width &&
+player.x+player.width > b.x &&
+player.y < b.y+b.height &&
+player.y+player.height > b.y
 ){
-player.x = 50;
-player.y = 300;
+player.x = 50
+player.y = 350
 }
-
-});
+})
 
 if(
 player.x < boss.x + boss.width &&
 player.x + player.width > boss.x &&
 player.y + player.height < boss.y + 20
 ){
-boss.hp--;
-player.dy = -8;
+boss.hp--
+player.dy = -10
+player.x = 50
+player.y = 350
 }
 
 if(boss.hp <=0){
 
-document.getElementById("mensaje").style.display="block";
+ctx.fillStyle="white"
+ctx.fillRect(200,100,800,300)
 
-document.getElementById("mensaje").innerHTML=
-"Cami, Felicidades por ganar ❤️<br><br>Espero que te haya gustado este mini juego.<br><br>Quiero decirte que te amo mucho,<br>te amo con todo mi corazón.<br><br>Quiero que seas mi única mujercita,<br>tan guapona 💕";
+ctx.fillStyle="black"
+ctx.font="28px Arial"
+
+ctx.fillText("Cami, Felicidades por ganar ❤️",300,180)
+ctx.fillText("Espero que te haya gustado este mini juego",230,230)
+ctx.fillText("Quiero decirte que te amo mucho",300,270)
+ctx.fillText("Te amo con todo mi corazón",300,310)
+ctx.fillText("Quiero que seas mi única mujercita",260,350)
+
+return
+}
+
+draw()
+
+requestAnimationFrame(update)
+}
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+ctx.fillStyle="brown"
+platforms.forEach(p=>{
+ctx.fillRect(p.x,p.y,p.width,p.height)
+})
+
+ctx.fillStyle="red"
+ctx.fillRect(player.x,player.y,player.width,player.height)
+
+ctx.fillStyle="purple"
+ctx.fillRect(boss.x,boss.y,boss.width,boss.height)
+
+ctx.fillStyle="black"
+bullets.forEach(b=>{
+ctx.fillRect(b.x,b.y,b.width,b.height)
+})
 
 }
 
-requestAnimationFrame(update);
-
-}
-
-update();
+update()
 
 </script>
 
